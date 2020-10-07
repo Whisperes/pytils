@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/Whisperes/pytils",
     packages=setuptools.find_packages(),
-    install_requires=['requests'],
+    install_requires=['requests','dill'],
     # TODO: from pip.req import parse_requirements
     classifiers=[
         "Programming Language :: Python :: 3",

@@ -9,7 +9,8 @@ import dill
 import string
 import os
 
-def pickledays(period = 10):
+period = config_var_with_default('PICKLE_PERIOD_DEFAULT',1)
+def pickledays(period = period):
     def picklecache(func):
         #Важна последовательность
         path_pickle=config_var_with_default('PATH_PICKLE','./Assets/pickle/') + func.__name__
@@ -71,7 +72,7 @@ def pickledays(period = 10):
             try:
                 import datetime
                 ftime = (datetime.datetime.now() - datetime.datetime.fromtimestamp(os.path.getmtime(cachename)))
-                if ftime.seconds > period:
+                if ftime.days > period:
                     logger.info('{} smell during {} > {}. Try to reload.'.format(func.__name__, ftime, period))
                     raise
                 else:

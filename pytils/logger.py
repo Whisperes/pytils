@@ -83,7 +83,7 @@ class DiscordHandler(logging.Handler):
 
         request = requests.post(self._url,
                                 headers=self._header,
-                                data=content)
+                                data=content, verify=False)
 
         if request.status_code == 404:
             raise requests.exceptions.InvalidURL(

@@ -20,10 +20,10 @@ def pickledays(period = period):
             for sublist in args:
                 if isinstance(sublist,dict):
                     for el in sorted(sublist.keys()):
-                        name += str(el)[:10]+str(sublist[el])[:10]
+                        name += str(el)[:10]+str(sublist[el])[:20]
                 else:
                     for el in sublist:
-                        name += str(el)[:10]
+                        name += str(el)[:20]
             if name == '':
                 name = 'NA'
             return path_pickle + '/' +name

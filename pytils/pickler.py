@@ -16,14 +16,20 @@ def pickledays(period = period):
         path_pickle=config_var_with_default('PATH_PICKLE','./Assets/pickle/') + func.__name__
 
         def makename(*args, **kwargs):
+            def convert_type(x):
+                import datetime
+                if isinstance(x, datetime.datetime):
+                    return str(x.date())
+                return str(x)[:20]
+
             name = ''
             for sublist in args:
                 if isinstance(sublist,dict):
                     for el in sorted(sublist.keys()):
-                        name += str(el)[:10]+str(sublist[el])[:20]
+                        name += convert_type(el)+convert_type(sublist[el])
                 else:
                     for el in sublist:
-                        name += str(el)[:20]
+                        name += convert_type(el)
             if name == '':
                 name = 'NA'
             return path_pickle + '/' +name

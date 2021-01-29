@@ -3,6 +3,9 @@ from functools import wraps
 import logging
 import json
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
 from socket import gethostname
 
 from pytils.configurator import config_var_with_default
@@ -49,6 +52,9 @@ def create_logger():
     logger.addHandler(discord_handler)
     logger.addHandler(logfile_handler)
     logger.addHandler(stream_handler)
+
+    import coloredlogs
+    coloredlogs.install(level=stream_level, logger=logger)
 
     logger.info('Logger set up')
     return logger

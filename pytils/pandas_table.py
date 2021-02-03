@@ -6,7 +6,8 @@ def create_excel_table(df, wr, sheet_name = 'Sheet1'):
         df.index.name = 'Index'
 
     # index and skip one row to allow us to insert a user defined header.
-    df = df.reset_index()
+    if df.index.name not in df.columns:
+        df = df.reset_index()
     df.to_excel(wr, sheet_name=sheet_name, startrow=1, header=False, index=False)
 
     # Get the xlsxwriter workbook and worksheet objects.

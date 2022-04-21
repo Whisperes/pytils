@@ -19,14 +19,12 @@ def create_logger():
     FORMAT = logging.Formatter(
         "%(asctime)s - %(levelname)s - %(message)s")
 
-    #config check
-    #TODO: Secret webhook
+
     discord_channel = config_var_with_default("LOG_WEBHOOK_DISCORD", 'https://discordapp.com/api/webhooks/748465782551216160/66Yn1W-PlVW5_PItHGxHMQ7ZRtkD37poEtIb9JeMlv3ricIgMEuyz17Sp1LtevDc0drl')
     logfile_path = config_var_with_default("LOG_FOLDER",'./Assets/logs/') + 'logs/'
     discord_level = config_var_with_default("LOG_LEVEL_DISCORD", 'ERROR')
     logfile_level = config_var_with_default("LOG_LEVEL_FILE", 'ERROR')
     stream_level = config_var_with_default("LOG_LEVEL_STREAM", 'DEBUG')
-
 
     # Create DiscordHandler, FileHandler and StreamHandler
     discord_handler = DiscordHandler(discord_channel, agent)
@@ -83,6 +81,7 @@ class DiscordHandler(logging.Handler):
             'User-Agent': self._agent,
             "Content-Type": "application/json"
         }
+
 
     def write_to_discord(self, message):
         content = json.dumps({"content": message})

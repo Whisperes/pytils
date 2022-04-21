@@ -78,7 +78,7 @@ def pickledays(period = period):
             try:
                 import datetime
                 ftime = (datetime.datetime.now() - datetime.datetime.fromtimestamp(os.path.getmtime(cachename)))
-                if ftime.days > period:
+                if ftime.days > period or period is None:
                     logger.info('{} smell during {} > {}. Try to reload.'.format(func.__name__, ftime, period))
                     raise
                 else:

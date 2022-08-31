@@ -1,41 +1,47 @@
-from functools import wraps
-
-import logging
 import json
+import logging
+from functools import wraps
+from socket import gethostname
+
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
-from socket import gethostname
 
 from pytils.configurator import config_var_with_default
 
+# totally reject the SSL check. Important information have to be logged without this module.
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+
 def create_logger():
-    agent = "LoggerBot"
+    # agent = f"{__name__}Bot"
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
     # Create formatter
-    FORMAT = logging.Formatter(
-        "%(asctime)s - %(levelname)s - %(message)s")
+    logs_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
+    # define list of log handlers. Unified for further usage.
+    # unpublic discord server have to be changed in config files.
+    discord_channel = config_var_with_default("LOG_WEBHOOK_DISCORD",
+                                              'https://discordapp.com/api/webhooks/748465782551216160/66Yn1W-PlVW5_PItHGxHMQ7ZRtkD37poEtIb9JeMlv3ricIgMEuyz17Sp1LtevDc0drl')
+    logfile_path = config_var_with_default("LOG_FOLDER", './Assets/logs/') + 'logs/'
 
-    discord_channel = config_var_with_default("LOG_WEBHOOK_DISCORD", 'https://discordapp.com/api/webhooks/748465782551216160/66Yn1W-PlVW5_PItHGxHMQ7ZRtkD37poEtIb9JeMlv3ricIgMEuyz17Sp1LtevDc0drl')
-    logfile_path = config_var_with_default("LOG_FOLDER",'./Assets/logs/') + 'logs/'
+    # Define level of allers
     discord_level = config_var_with_default("LOG_LEVEL_DISCORD", 'ERROR')
     logfile_level = config_var_with_default("LOG_LEVEL_FILE", 'ERROR')
     stream_level = config_var_with_default("LOG_LEVEL_STREAM", 'DEBUG')
 
-    # Create DiscordHandler, FileHandler and StreamHandler
-    discord_handler = DiscordHandler(discord_channel, agent)
+    # Create DiscordHandlerand StreamHandler
+    discord_handler = DiscordHandler(discord_channel)
 
     stream_handler = logging.StreamHandler()
 
+    # Create FileHandler
     import os
     if not os.path.exists(logfile_path):
         os.makedirs(logfile_path)
 
-    logfile_handler = logging.FileHandler(logfile_path+'logs.txt')
+    logfile_handler = logging.FileHandler(logfile_path + 'logs.txt')
 
     # Set log level to handlers
     discord_handler.setLevel(discord_level)
@@ -43,25 +49,27 @@ def create_logger():
     stream_handler.setLevel(stream_level)
 
     # Add format to handlers
-    discord_handler.setFormatter(FORMAT)
-    logfile_handler.setFormatter(FORMAT)
+    discord_handler.setFormatter(logs_format)
+    logfile_handler.setFormatter(logs_format)
 
     # Add the handlers to the Logger
     logger.addHandler(discord_handler)
     logger.addHandler(logfile_handler)
     logger.addHandler(stream_handler)
 
+    # add colors to stram logs
     import coloredlogs
     coloredlogs.install(level=stream_level, logger=logger)
 
     logger.info('Logger set up')
     return logger
 
+
 class DiscordHandler(logging.Handler):
     """
-    A handler class which writes logging records, appropriately formatted,
-    to a Discord Server using webhooks.
+    A handler class which writes logging records, appropriately formatted, to a Discord Server using webhooks.
     """
+
     def __init__(self, webhook_url, agent=None):
         logging.Handler.__init__(self)
 
@@ -82,19 +90,19 @@ class DiscordHandler(logging.Handler):
             "Content-Type": "application/json"
         }
 
-
     def write_to_discord(self, message):
         content = json.dumps({"content": message})
 
         request = requests.post(self._url,
                                 headers=self._header,
-                                data=content, verify=False)
+                                data=content,
+                                verify=False)
 
         if request.status_code == 404:
             raise requests.exceptions.InvalidURL(
                 "This URL seams wrong... Response = %s" % request.text)
 
-        if request.ok == False:
+        if request.ok is False:
             raise requests.exceptions.HTTPError(
                 "Request not successful... Code = %s, Message = %s" % request.status_code, request.text)
 
@@ -105,7 +113,11 @@ class DiscordHandler(logging.Handler):
         except Exception:
             self.handleError(record)
 
-def log(level = 'DEBUG'):
+
+def log(level='DEBUG'):
+    """Decorator for functions, which will log the function request.
+    Have to be used with @log(level='DEBUG') before any function."""
+
     def log_without_level(func):
         @wraps(func)
         def wrapper(*args, **kwargs):

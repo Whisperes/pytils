@@ -1,43 +1,46 @@
-from pytils.configurator import *
+import glob
+import os
+import dill
+import datetime
 from functools import wraps
-
+from pytils.configurator import *
 from pytils.logger import logger
 
-import glob
-import itertools
-import dill
-import string
-import os
+# How long the object will be fresh? None - option for no usage of pickle. Can be change in config.
+period = config_var_with_default('PICKLE_PERIOD_DEFAULT', 1)
 
-period = config_var_with_default('PICKLE_PERIOD_DEFAULT',1)
-def pickledays(period = period):
+
+def pickledays(period=period):
     def picklecache(func):
-        #Важна последовательность
-        path_pickle=config_var_with_default('PATH_PICKLE','./Assets/pickle/') + func.__name__
+        # Path of storage the pickle files.
+        path_pickle = config_var_with_default('PATH_PICKLE', './Assets/pickle/') + func.__name__
 
         def makename(*args, **kwargs):
+            """naming the pickle file"""
+
+            # define the function for stringify the arguments
             def convert_type(x):
-                import datetime
                 if isinstance(x, datetime.datetime):
                     return str(x.date())
-                return str(x)[:20]
+                else:
+                    # not so long names should be used
+                    return str(x)[:20]
 
             name = ''
+            # list through arguments and add them to file name
             for sublist in args:
-                if isinstance(sublist,dict):
-                    for el in sorted(sublist.keys()):
-                        name += convert_type(el)+convert_type(sublist[el])
+                if isinstance(sublist, dict):
+                    for key in sorted(sublist.keys()):
+                        name += convert_type(key) + convert_type(sublist[key])
                 else:
-                    for el in sublist:
-                        name += convert_type(el)
+                    for key in sublist:
+                        name += convert_type(key)
             if name == '':
                 name = 'NA'
-            return path_pickle + '/' +name
+            return path_pickle + '/' + name
 
         def clearcache(*args, **kwargs):
-            '''
-            delete the cached result for these particular arguments
-            '''
+            """ delete the cached result for these particular arguments """
             cachename = makename(args, kwargs)
             try:
                 os.remove(cachename)
@@ -46,9 +49,8 @@ def pickledays(period = period):
                 pass
 
         def clearallcache():
-            '''
-            delete all chached results for this function
-            '''
+            """ delete all chached results for this function """
+
             for f in glob.iglob(''.join(('.*', func.__name__, '_picklecache'))):
                 try:
                     os.remove(f)
@@ -57,12 +59,12 @@ def pickledays(period = period):
 
         @wraps(func)
         def wrapper(*args, **kwargs):
-            '''
-            wrapper which does the actual caching
-            '''
+            """wrapper which does the actual caching"""
+
             cachename = makename(args, kwargs)
 
             def write():
+                # TODO pickle with import issues https://stackoverflow.com/questions/1412787/picklingerror-cant-pickle-class-decimal-decimal-its-not-the-same-object
                 if not os.path.exists(path_pickle):
                     os.makedirs(path_pickle)
 
@@ -80,12 +82,14 @@ def pickledays(period = period):
                 ftime = (datetime.datetime.now() - datetime.datetime.fromtimestamp(os.path.getmtime(cachename)))
                 if ftime.days > period or period is None:
                     logger.info('{} smell during {} > {}. Try to reload.'.format(func.__name__, ftime, period))
-                    raise
+                    raise FileExistsError
                 else:
                     logger.debug('{} fresh {}'.format(func.__name__, ftime))
                     result = read()
             except:
+                # if file not founded and read unsuccessful
                 result = write()
+                logger.debug('{} refreshed'.format(func.__name__))
             return result
 
         # attach clearcache and clearallcache to wrapper
@@ -93,5 +97,5 @@ def pickledays(period = period):
         wrapper.clearallcache = clearallcache
 
         return wrapper
-    return picklecache
 
+    return picklecache

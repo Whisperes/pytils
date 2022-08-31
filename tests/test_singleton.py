@@ -1,10 +1,13 @@
 import pytest
+
 from pytils.singleton import Singleton_args
+
 
 @Singleton_args
 class Example:
-    '''Text class with few operations, which will be used in test cases.'''
-    def __init__(self, par = 0):
+    """Text class with few operations, which will be used in test cases."""
+
+    def __init__(self, par=0):
         # Default value will be used for cases where args are not necessery
         self.par = par
 
@@ -25,10 +28,12 @@ class Example:
 
 
 num_list = [1, 2, 5]
+
+
 @pytest.mark.parametrize("num", num_list)
 def test_singlon_class_with_args(num):
     test_object1 = Example(num)
-    assert test_object1==num
+    assert test_object1 == num
 
     test_object2 = Example(num)
     assert test_object2 == num
@@ -42,7 +47,7 @@ def test_singlon_class_with_args(num):
 
 def test_singlon_class_without_args():
     test_object1 = Example()
-    assert test_object1==0
+    assert test_object1 == 0
 
     test_object2 = Example()
     assert test_object2 == 0

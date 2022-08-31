@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pytils", # Replace with your own username
-    version="0.0.5",
+    version="0.1.0",
     author="Whispered",
     author_email="bluden99@example.com",
     description="Utils for data python project",
@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/Whisperes/pytils",
     packages=setuptools.find_packages(),
-    install_requires=['requests','dill','coloredlogs'],
+    install_requires=['requests','dill','coloredlogs', 'pytest'],
     # TODO: from pip.req import parse_requirements
     classifiers=[
         "Programming Language :: Python :: 3",

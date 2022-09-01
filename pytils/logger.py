@@ -12,13 +12,79 @@ from pytils.configurator import config_var_with_default
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
+class CustomStreamFormatter(logging.Formatter):
+    grey = "\x1b[38;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    bold_red = "\x1b[31;1m"
+    reset = "\x1b[0m"
+    format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+
+    FORMATS = {
+        logging.DEBUG: grey + format + reset,
+        logging.INFO: grey + format + reset,
+        logging.WARNING: yellow + format + reset,
+        logging.ERROR: red + format + reset,
+        logging.CRITICAL: bold_red + format + reset
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+def addLoggingLevel(levelName, levelNum, methodName=None):
+    """
+    Comprehensively adds a new logging level to the `logging` module and the
+    currently configured logging class.
+
+    `levelName` becomes an attribute of the `logging` module with the value
+    `levelNum`. `methodName` becomes a convenience method for both `logging`
+    itself and the class returned by `logging.getLoggerClass()` (usually just
+    `logging.Logger`). If `methodName` is not specified, `levelName.lower()` is
+    used.
+
+    To avoid accidental clobberings of existing attributes, this method will
+    raise an `AttributeError` if the level name is already an attribute of the
+    `logging` module or if the method name is already present
+
+    Example
+    -------
+     addLoggingLevel('TRACE', logging.DEBUG - 5)
+     logging.getLogger(__name__).setLevel("TRACE")
+     logging.getLogger(__name__).trace('that worked')
+     logging.trace('so did this')
+     logging.TRACE
+    """
+    if not methodName:
+        methodName = levelName.lower()
+
+    if hasattr(logging, levelName):
+       raise AttributeError('{} already defined in logging module'.format(levelName))
+    if hasattr(logging, methodName):
+       raise AttributeError('{} already defined in logging module'.format(methodName))
+    if hasattr(logging.getLoggerClass(), methodName):
+       raise AttributeError('{} already defined in logger class'.format(methodName))
+
+    # This method was inspired by the answers to Stack Overflow post
+    # http://stackoverflow.com/q/2183233/2988730, especially
+    # http://stackoverflow.com/a/13638084/2988730
+    def logForLevel(self, message, *args, **kwargs):
+        if self.isEnabledFor(levelNum):
+            self._log(levelNum, message, args, **kwargs)
+    def logToRoot(message, *args, **kwargs):
+        logging.log(levelNum, message, *args, **kwargs)
+
+    logging.addLevelName(levelNum, levelName)
+    setattr(logging, levelName, levelNum)
+    setattr(logging.getLoggerClass(), methodName, logForLevel)
+    setattr(logging, methodName, logToRoot)
+
+
 def create_logger():
     # agent = f"{__name__}Bot"
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-
-    # Create formatter
-    logs_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
     # define list of log handlers. Unified for further usage.
     # unpublic discord server have to be changed in config files.
@@ -48,18 +114,34 @@ def create_logger():
     logfile_handler.setLevel(logfile_level)
     stream_handler.setLevel(stream_level)
 
+    # Create formatter
+    logs_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    logs_stream_format = CustomStreamFormatter()
+
     # Add format to handlers
     discord_handler.setFormatter(logs_format)
     logfile_handler.setFormatter(logs_format)
+    # stream_handler.setFormatter(logs_stream_format)
 
     # Add the handlers to the Logger
     logger.addHandler(discord_handler)
     logger.addHandler(logfile_handler)
     logger.addHandler(stream_handler)
 
+    # add log levels
+    addLoggingLevel('SUCCESS', 15, methodName=None)
+    addLoggingLevel('NOTICE', 25, methodName=None)
+
     # add colors to stram logs
     import coloredlogs
-    coloredlogs.install(level=stream_level, logger=logger)
+    coloredlogs.install(level='DEBUG',
+                        logger=logger,
+                        level_styles = {'debug': {'color': 95},
+                                        'success': {'color': 46},
+                                        'info': {'color': 'blue'},
+                                        'notice': {'color': 'magenta'},
+                                        'warning': {'color': 'yellow'},'error': {'color': 'red'},
+                                        'critical': {'bold': True, 'color': 'red'}})
 
     logger.info('Logger set up')
     return logger
@@ -93,10 +175,16 @@ class DiscordHandler(logging.Handler):
     def write_to_discord(self, message):
         content = json.dumps({"content": message})
 
-        request = requests.post(self._url,
-                                headers=self._header,
-                                data=content,
-                                verify=False)
+        try:
+            request = requests.post(self._url,
+                                    headers=self._header,
+                                    data=content,
+                                    verify=False,
+                                    timeout=1)
+        except requests.exceptions.ReadTimeout as ex:
+            logger.debug('Discord logs timed out')
+            raise ConnectionError
+            # raise requests.exceptions.ReadTimeout
 
         if request.status_code == 404:
             raise requests.exceptions.InvalidURL(
@@ -116,12 +204,13 @@ class DiscordHandler(logging.Handler):
 
 def log(level='DEBUG'):
     """Decorator for functions, which will log the function request.
-    Have to be used with @log(level='DEBUG') before any function."""
+    Have to be used with @log(level='YOUR LEVEL') before any function."""
 
     def log_without_level(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             try:
+                res = func(*args, **kwargs)
                 if level == 'DEBUG':
                     logger.debug(msg="{0} - {1} - {2}".format(func.__name__, args, kwargs))
                 elif level == 'INFO':
@@ -130,7 +219,7 @@ def log(level='DEBUG'):
                     logger.warning(msg="{0} - {1} - {2}".format(func.__name__, args, kwargs))
                 elif level == 'ERROR':
                     logger.error(msg="{0} - {1} - {2}".format(func.__name__, args, kwargs))
-                res = func(*args, **kwargs)
+                # logger.success("{0} - {1} - {2}".format(func.__name__, args, kwargs))
             except Exception as ex:
                 logger.exception("{0} - {1} - {2} \n {3}".format(func.__name__, args, kwargs, ex))
                 raise ex

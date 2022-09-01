@@ -19,7 +19,9 @@ def test_log_with_args():
 
 def test_colors():
     logger.debug("this is a debugging message")
+    logger.success("this is a success message")
     logger.info("this is an informational message")
     logger.warning("this is a warning message")
+    logger.notice("this is a notice message")
     logger.error("this is an error message")
     logger.critical("this is a critical message")

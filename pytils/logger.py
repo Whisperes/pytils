@@ -10,28 +10,8 @@ from pytils.configurator import config_var_with_default
 
 # totally reject the SSL check. Important information have to be logged without this module.
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-
-class CustomStreamFormatter(logging.Formatter):
-    grey = "\x1b[38;20m"
-    yellow = "\x1b[33;20m"
-    red = "\x1b[31;20m"
-    bold_red = "\x1b[31;1m"
-    reset = "\x1b[0m"
-    format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
-
-    FORMATS = {
-        logging.DEBUG: grey + format + reset,
-        logging.INFO: grey + format + reset,
-        logging.WARNING: yellow + format + reset,
-        logging.ERROR: red + format + reset,
-        logging.CRITICAL: bold_red + format + reset
-    }
-
-    def format(self, record):
-        log_fmt = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_fmt)
-        return formatter.format(record)
 
 def addLoggingLevel(levelName, levelNum, methodName=None):
     """
@@ -116,7 +96,6 @@ def create_logger():
 
     # Create formatter
     logs_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    logs_stream_format = CustomStreamFormatter()
 
     # Add format to handlers
     discord_handler.setFormatter(logs_format)

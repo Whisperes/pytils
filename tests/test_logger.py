@@ -1,8 +1,8 @@
 from pytils.logger import *
 """All tests here are not automated."""
 
-@log('ERROR')
-def func_tst(a=1, b=2, c=3):
+@log('WARNING', True)
+def func_tst(a=[1,3], b=2, c=3):
     return True
 
 
@@ -13,7 +13,7 @@ def test_log():
 
 
 def test_log_with_args():
-    answer = func_tst(1, 2, c=3)
+    answer = func_tst([11, 'beta'], 2, c=3)
     # TODO check the print in StreamHandler and File
     assert answer
 

@@ -13,7 +13,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-def addLoggingLevel(levelName, levelNum, methodName=None):
+def addLoggingLevel(levelName: str, levelNum: int, methodName=None):
     """
     Comprehensively adds a new logging level to the `logging` module and the
     currently configured logging class.
@@ -131,7 +131,7 @@ class DiscordHandler(logging.Handler):
     A handler class which writes logging records, appropriately formatted, to a Discord Server using webhooks.
     """
 
-    def __init__(self, webhook_url, agent=None):
+    def __init__(self, webhook_url: str, agent=None):
         logging.Handler.__init__(self)
 
         if webhook_url is None or webhook_url == "":
@@ -151,7 +151,7 @@ class DiscordHandler(logging.Handler):
             "Content-Type": "application/json"
         }
 
-    def write_to_discord(self, message):
+    def write_to_discord(self, message: str):
         content = json.dumps({"content": message})
 
         try:
@@ -181,26 +181,37 @@ class DiscordHandler(logging.Handler):
             self.handleError(record)
 
 
-def log(level='DEBUG'):
+def log(level=None, arg_included = True):
     """Decorator for functions, which will log the function request.
-    Have to be used with @log(level='YOUR LEVEL') before any function."""
+    Have to be used with @log(level='YOUR LEVEL') before any function.
+    """
 
     def log_without_level(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             try:
                 res = func(*args, **kwargs)
-                if level == 'DEBUG':
-                    logger.debug(msg="{0} - {1} - {2}".format(func.__name__, args, kwargs))
+                if arg_included:
+                    msg = "{0}: {1}, {2}".format(func.__name__, str(args), str(kwargs))
+                else:
+                    msg = func.__name__
+
+                if level is None:
+                    logger.success(msg)
+                elif level == 'DEBUG':
+                    logger.debug(msg)
                 elif level == 'INFO':
-                    logger.info(msg="{0} - {1} - {2}".format(func.__name__, args, kwargs))
+                    logger.info(msg)
                 elif level == 'WARNING':
-                    logger.warning(msg="{0} - {1} - {2}".format(func.__name__, args, kwargs))
+                    logger.warning(msg)
                 elif level == 'ERROR':
-                    logger.error(msg="{0} - {1} - {2}".format(func.__name__, args, kwargs))
-                # logger.success("{0} - {1} - {2}".format(func.__name__, args, kwargs))
+                    logger.error(msg)
+                elif isinstance(level, int):
+                    logger.log(msg, level = level)
+                else:
+                    raise AttributeError('Error for @log decorator arguments')
             except Exception as ex:
-                logger.exception("{0} - {1} - {2} \n {3}".format(func.__name__, args, kwargs, ex))
+                logger.exception("{0}: {1}, {2} \n {3}".format(func.__name__, str(args), str(kwargs), ex))
                 raise ex
             return res
         return wrapper

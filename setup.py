@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="pytils", # Replace with your own username
-    version="0.1.1",
+    name="pytils-functions",
+    version="0.1.2",
     author="Whispered",
     author_email="bluden99@example.com",
     description="Utils for data python project",

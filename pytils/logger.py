@@ -73,7 +73,7 @@ def create_logger(name = __name__):
     logfile_path = config_var_with_default("LOG_FOLDER", './Assets/logs/')
 
     # Define level of allers
-    discord_level = config_var_with_default("LOG_LEVEL_DISCORD", 'ERROR')
+    discord_level = config_var_with_default("LOG_LEVEL_DISCORD", 'DEBUG')
     logfile_level = config_var_with_default("LOG_LEVEL_FILE", 'ERROR')
     stream_level = config_var_with_default("LOG_LEVEL_STREAM", 'DEBUG')
 
@@ -98,6 +98,7 @@ def create_logger(name = __name__):
     logs_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
     # Add format to handlers
+    # discord_handler.setFormatter(DiscordFormatter())
     discord_handler.setFormatter(logs_format)
     logfile_handler.setFormatter(logs_format)
     # stream_handler.setFormatter(logs_stream_format)
@@ -110,18 +111,70 @@ def create_logger(name = __name__):
 
     # add colors to stram logs
     import coloredlogs
-    coloredlogs.install(level='DEBUG',
-                        logger=logger,
-                        level_styles={'debug': {'color': 95},
-                                      'success': {'color': 46},
-                                      'info': {'color': 'blue'},
-                                      'notice': {'color': 'magenta'},
-                                      'warning': {'color': 'yellow'},
-                                      'error': {'color': 'red'},
-                                      'critical': {'bold': True, 'color': 'red'}})
+    # coloredlogs.install(level='DEBUG',
+    #                     logger=logger,
+    #                     level_styles={'debug': {'color': 95},
+    #                                   'success': {'color': 46},
+    #                                   'info': {'color': 'blue'},
+    #                                   'notice': {'color': 'magenta'},
+    #                                   'warning': {'color': 'yellow'},
+    #                                   'error': {'color': 'red'},
+    #                                   'critical': {'bold': True, 'color': 'red'}})
 
-    logger.debug(f'Logger {name} set up')
+    # logger.debug(f'Logger {name} set up')
     return logger
+
+
+class DiscordFormatter(logging.Formatter):
+    colormap = {'CRITICAL': 0xa11f1f, 'ERROR': 0xd10909,
+                'WARNING': 0xb76b0d, 'NOTICE': 0x7c4605,
+                'SUCCESS': 0x28a904, 'INFO': 0x0867af,
+                'DEBUG': 0x676a6c
+                }
+
+    def formatMessage(self, record) -> dict:
+        """
+        Overwritten to return a dictionary of the relevant LogRecord attributes instead of a string.
+        KeyError is raised if an unknown attribute is provided in the fmt_dict.
+        Build the discord component https://autocode.com/tools/discord/embed-builder/
+        """
+        return {"embeds": [
+                            {
+                              "type": "rich",
+                              "description": record.message,
+                              "color": self.colormap[record.levelname] if record.levelname in self.colormap else 0x181c20,
+                              "timestamp": self.formatTime(record),
+                              "footer": {
+                                "text": f"{record.levelname} in {record.module}"
+                              }
+                            }]}
+
+    def formatException(self, record):
+        pass
+
+
+    def format(self, record) -> str:
+        """
+        Mostly the same as the parent's class method, the difference being that a dict is manipulated and dumped as JSON
+        instead of a string.
+        """
+        record.message = record.getMessage()
+
+        if self.usesTime():
+            record.asctime = self.formatTime(record, self.datefmt)
+
+        message_dict = self.formatMessage(record)
+
+        # TODO Format exception. Code below, but posts are to big
+        # if record.exc_info:
+        #     # Cache the traceback text to avoid converting it multiple times
+        #     # (it's constant anyway)
+        #     if not record.exc_text:
+        #         message_dict["embeds"][0].update({"title": record.message,
+        #                                           'description': self.formatException(record.exc_info)})
+
+        return json.dumps(message_dict, default=str)
+
 
 
 class DiscordHandler(logging.Handler):
@@ -154,11 +207,12 @@ class DiscordHandler(logging.Handler):
         content = json.dumps({"content": message})
 
         try:
+            #TODO use async thread for not waiting the answer from Discord
             request = requests.post(self._url,
                                     headers=self._header,
                                     data=content,
                                     verify=False,
-                                    timeout=1)
+                                    timeout=3)
         except requests.exceptions.ReadTimeout as ex:
             logger.debug('Discord logs timed out')
             raise ConnectionError
@@ -175,7 +229,7 @@ class DiscordHandler(logging.Handler):
     def emit(self, record):
         try:
             msg = self.format(record)
-            self.write_to_discord("```%s```" % msg)
+            self.write_to_discord(msg)
         except Exception:
             self.handleError(record)
 
@@ -193,7 +247,7 @@ def log(level=None, arg_included=True):
                     msg = "{0}: {1}, {2}".format(func.__name__, str(args), str(kwargs))
                 else:
                     msg = func.__name__
-                logger.debug(f"Processing {msg}")
+                logger.debug(f"Processing {msg}", extra={'argi': args, 'kwargi': kwargs})
                 res = func(*args, **kwargs)
                 if level is None:
                     logger.success(msg)

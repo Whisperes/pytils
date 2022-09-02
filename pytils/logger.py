@@ -40,11 +40,11 @@ def addLoggingLevel(levelName: str, levelNum: int, methodName=None):
         methodName = levelName.lower()
 
     if hasattr(logging, levelName):
-       raise AttributeError('{} already defined in logging module'.format(levelName))
+        raise AttributeError('{} already defined in logging module'.format(levelName))
     if hasattr(logging, methodName):
-       raise AttributeError('{} already defined in logging module'.format(methodName))
+        raise AttributeError('{} already defined in logging module'.format(methodName))
     if hasattr(logging.getLoggerClass(), methodName):
-       raise AttributeError('{} already defined in logger class'.format(methodName))
+        raise AttributeError('{} already defined in logger class'.format(methodName))
 
     # This method was inspired by the answers to Stack Overflow post
     # http://stackoverflow.com/q/2183233/2988730, especially
@@ -52,6 +52,7 @@ def addLoggingLevel(levelName: str, levelNum: int, methodName=None):
     def logForLevel(self, message, *args, **kwargs):
         if self.isEnabledFor(levelNum):
             self._log(levelNum, message, args, **kwargs)
+
     def logToRoot(message, *args, **kwargs):
         logging.log(levelNum, message, *args, **kwargs)
 
@@ -60,11 +61,9 @@ def addLoggingLevel(levelName: str, levelNum: int, methodName=None):
     setattr(logging.getLoggerClass(), methodName, logForLevel)
     setattr(logging, methodName, logToRoot)
 
-
-def create_logger():
+def create_logger(name = __name__):
     # agent = f"{__name__}Bot"
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger = logging.getLogger(name)
 
     # define list of log handlers. Unified for further usage.
     # unpublic discord server have to be changed in config files.
@@ -107,20 +106,18 @@ def create_logger():
     logger.addHandler(logfile_handler)
     logger.addHandler(stream_handler)
 
-    # add log levels
-    addLoggingLevel('SUCCESS', 15, methodName=None)
-    addLoggingLevel('NOTICE', 25, methodName=None)
 
     # add colors to stram logs
     import coloredlogs
     coloredlogs.install(level='DEBUG',
                         logger=logger,
-                        level_styles = {'debug': {'color': 95},
-                                        'success': {'color': 46},
-                                        'info': {'color': 'blue'},
-                                        'notice': {'color': 'magenta'},
-                                        'warning': {'color': 'yellow'},'error': {'color': 'red'},
-                                        'critical': {'bold': True, 'color': 'red'}})
+                        level_styles={'debug': {'color': 95},
+                                      'success': {'color': 46},
+                                      'info': {'color': 'blue'},
+                                      'notice': {'color': 'magenta'},
+                                      'warning': {'color': 'yellow'},
+                                      'error': {'color': 'red'},
+                                      'critical': {'bold': True, 'color': 'red'}})
 
     logger.info('Logger set up')
     return logger
@@ -181,7 +178,7 @@ class DiscordHandler(logging.Handler):
             self.handleError(record)
 
 
-def log(level=None, arg_included = True):
+def log(level=None, arg_included=True):
     """Decorator for functions, which will log the function request.
     Have to be used with @log(level='YOUR LEVEL') before any function.
     """
@@ -190,12 +187,12 @@ def log(level=None, arg_included = True):
         @wraps(func)
         def wrapper(*args, **kwargs):
             try:
-                res = func(*args, **kwargs)
                 if arg_included:
                     msg = "{0}: {1}, {2}".format(func.__name__, str(args), str(kwargs))
                 else:
                     msg = func.__name__
-
+                logger.debug(f"Processing {msg}")
+                res = func(*args, **kwargs)
                 if level is None:
                     logger.success(msg)
                 elif level == 'DEBUG':
@@ -207,16 +204,24 @@ def log(level=None, arg_included = True):
                 elif level == 'ERROR':
                     logger.error(msg)
                 elif isinstance(level, int):
-                    logger.log(msg, level = level)
+                    logger.log(msg, level=level)
                 else:
                     raise AttributeError('Error for @log decorator arguments')
             except Exception as ex:
                 logger.exception("{0}: {1}, {2} \n {3}".format(func.__name__, str(args), str(kwargs), ex))
                 raise ex
             return res
+
         return wrapper
+
     return log_without_level
 
 
-create_logger()
-logger = logging.getLogger("Application")
+# add log levels into logging module
+addLoggingLevel('SUCCESS', 15, methodName=None)
+addLoggingLevel('NOTICE', 25, methodName=None)
+
+
+#create one logger for reserve goals. Just import module with "from pytils.logger import logger" and use in programm
+create_logger("|")
+logger = logging.getLogger("|")

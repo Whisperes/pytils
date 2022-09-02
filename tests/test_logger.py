@@ -25,3 +25,10 @@ def test_colors():
     logger.notice("this is a notice message")
     logger.error("this is an error message")
     logger.critical("this is a critical message")
+
+
+def test_loggers_conflict():
+    logger.critical("this is a critical message")
+    create_logger(__name__)
+    logger2 = logging.getLogger(__name__)
+    logger2.critical("this is a another critical message")

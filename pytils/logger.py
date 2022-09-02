@@ -1,5 +1,6 @@
 import json
 import logging
+from logging.handlers import TimedRotatingFileHandler
 from functools import wraps
 from socket import gethostname
 
@@ -69,7 +70,7 @@ def create_logger(name = __name__):
     # unpublic discord server have to be changed in config files.
     discord_channel = config_var_with_default("LOG_WEBHOOK_DISCORD",
                                               'https://discordapp.com/api/webhooks/748465782551216160/66Yn1W-PlVW5_PItHGxHMQ7ZRtkD37poEtIb9JeMlv3ricIgMEuyz17Sp1LtevDc0drl')
-    logfile_path = config_var_with_default("LOG_FOLDER", './Assets/logs/') + 'logs/'
+    logfile_path = config_var_with_default("LOG_FOLDER", './Assets/logs/')
 
     # Define level of allers
     discord_level = config_var_with_default("LOG_LEVEL_DISCORD", 'ERROR')
@@ -86,7 +87,7 @@ def create_logger(name = __name__):
     if not os.path.exists(logfile_path):
         os.makedirs(logfile_path)
 
-    logfile_handler = logging.FileHandler(logfile_path + 'logs.txt')
+    logfile_handler = TimedRotatingFileHandler(logfile_path + 'log', when='D', backupCount=14)
 
     # Set log level to handlers
     discord_handler.setLevel(discord_level)

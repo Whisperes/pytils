@@ -31,11 +31,9 @@ def test_func_exception():
 
 def test__la_exception():
     try:
-        raise ValueError
+        ValueError('sdf')
     except ValueError as ex:
         logger.error('test accepted', ex)
-
-
 
 def test_colors():
     logger.debug("this is a debugging message")

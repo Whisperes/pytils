@@ -119,7 +119,7 @@ def create_logger(name = __name__):
                                       'error': {'color': 'red'},
                                       'critical': {'bold': True, 'color': 'red'}})
 
-    logger.info('Logger set up')
+    logger.debug(f'Logger {name} set up')
     return logger
 
 

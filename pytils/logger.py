@@ -127,6 +127,7 @@ def create_logger(name = __name__):
 class DiscordHandler(logging.Handler):
     """
     A handler class which writes logging records, appropriately formatted, to a Discord Server using webhooks.
+    Thx https://github.com/TrayserCassa/DiscordHandler
     """
 
     def __init__(self, webhook_url: str, agent=None):
@@ -223,6 +224,6 @@ addLoggingLevel('SUCCESS', 15, methodName=None)
 addLoggingLevel('NOTICE', 25, methodName=None)
 
 
-#create one logger for reserve goals. Just import module with "from pytils.logger import logger" and use in programm
+#create one logger for reserve goals. Just import module with "from pytils.logger import logger" and use in your programm
 create_logger("|")
 logger = logging.getLogger("|")

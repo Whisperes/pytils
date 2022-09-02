@@ -1,9 +1,10 @@
 #Configuration
-Dynaconf - configurate the settings and secrets for whole project.
+_Dynaconf_ - configurate the settings and secrets for whole project.
 
 This command will create files:
-dynaconf init -f toml
+
+    dynaconf init -f toml
 
 
 # Libraries
-profilehooks - If you need to profile functions
+_profilehooks_ - If you need to profile functions

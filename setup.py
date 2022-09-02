@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pytils", # Replace with your own username
-    version="0.1.0",
+    version="0.1.1",
     author="Whispered",
     author_email="bluden99@example.com",
     description="Utils for data python project",

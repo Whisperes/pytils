@@ -5,14 +5,14 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pytils-functions",
-    version="0.1.2",
+    version="0.1.3",
     author="Whispered",
     author_email="bluden99@example.com",
     description="Utils for data python project",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Whisperes/pytils",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=("tests.*","docs.*")),
     install_requires=['requests','dill','coloredlogs', 'pytest'],
     # TODO: from pip.req import parse_requirements
     classifiers=[

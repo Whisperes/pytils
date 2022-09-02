@@ -11,7 +11,7 @@ Utils for data python projects. Simple, straightforward, but time saving.
 # Installation
 From the [PiPy](https://pypi.org/project/pytils-functions/):
 
-    pip install https://pypi.org/project/pytils-functions/0.1.1/
+    pip install pytils-functions
 
 Directly from github:
 

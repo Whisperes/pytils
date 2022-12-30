@@ -20,4 +20,5 @@
     python -m venv env
     env\Scripts\activate.bat
 
-
+#deploy to azure
+twine upload --repository-url url dist/*

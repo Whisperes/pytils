@@ -62,14 +62,14 @@ def addLoggingLevel(levelName: str, levelNum: int, methodName=None):
     setattr(logging.getLoggerClass(), methodName, logForLevel)
     setattr(logging, methodName, logToRoot)
 
-def create_logger(name = __name__):
+def create_logger(name = __name__, discord_webhook = config_var_with_default("LOG_WEBHOOK_DISCORD",
+                                              'https://discordapp.com/api/webhooks/748465782551216160/66Yn1W-PlVW5_PItHGxHMQ7ZRtkD37poEtIb9JeMlv3ricIgMEuyz17Sp1LtevDc0drl')):
     # agent = f"{__name__}Bot"
     logger = logging.getLogger(name)
 
     # define list of log handlers. Unified for further usage.
     # unpublic discord server have to be changed in config files.
-    discord_channel = config_var_with_default("LOG_WEBHOOK_DISCORD",
-                                              'https://discordapp.com/api/webhooks/748465782551216160/66Yn1W-PlVW5_PItHGxHMQ7ZRtkD37poEtIb9JeMlv3ricIgMEuyz17Sp1LtevDc0drl')
+    discord_channel = discord_webhook
     logfile_path = config_var_with_default("LOG_FOLDER", './Assets/logs/')
 
     # Define level of allers

@@ -36,6 +36,7 @@ def test__la_exception():
         logger.error('test accepted', ex)
 
 def test_colors():
+
     logger.debug("this is a debugging message")
     logger.success("this is a success message")
     logger.info("this is an informational message")
@@ -43,6 +44,8 @@ def test_colors():
     logger.notice("this is a notice message")
     logger.error("this is an error message")
     logger.critical("this is a critical message")
+    for e in range(20):
+        print(f'{e}')
     logger.log(89, "this is a number message")
 
 

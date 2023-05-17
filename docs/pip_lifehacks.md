@@ -1,7 +1,8 @@
 # PIP lifehacks
 
 ## import without SSL check
-    pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org /YOUR LIBRARY/
+    pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host pkgs.de
+
 
 ## import from github
     pip install git+https://github.com/Whisperes/pytils.git
@@ -19,5 +20,3 @@
 #Venv
     python -m venv env
     env\Scripts\activate.bat
-
-

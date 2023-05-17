@@ -2,3 +2,4 @@ dynaconf
 requests
 dill
 coloredlogs
+python-certifi-win32

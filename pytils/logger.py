@@ -98,7 +98,7 @@ def create_logger():
     logs_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
     # Add format to handlers
-    discord_handler.setFormatter(logs_format)
+    # discord_handler.setFormatter(logs_format)
     logfile_handler.setFormatter(logs_format)
     # stream_handler.setFormatter(logs_stream_format)
 
@@ -152,7 +152,11 @@ class DiscordHandler(logging.Handler):
         }
 
     def write_to_discord(self, message: str):
-        content = json.dumps({"content": message})
+        content = json.dumps({"embeds": [{
+                              "title": "Hello!",
+                              "description": message,
+                              "timestamp": "2022-09-01 18:43:45",
+                              "color": 14177041}]})
 
         try:
             request = requests.post(self._url,

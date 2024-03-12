@@ -9,5 +9,5 @@ def example_function():
         return('True')
 
 
-def test_retires():
+def test_retries():
     example_function()

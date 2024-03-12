@@ -39,7 +39,7 @@ For each handler you can set your own log level in the settings.toml file in you
     logger.critical("this is a critical message")
     logger.log(89, "this is a number message")
     
-## How to decorate functions
+## How to decorate functions for logs
     from pytils.logger import log
     
     @log()
@@ -53,6 +53,7 @@ It will be loged like this:
 _2022-09-02 18:13:25 my-pc |[3812] DEBUG Processing my_function: ([11, 'beta'], 2), {'c': 3}_
 
 _2022-09-02 18:13:25 my-pc |[3812] SUCCESS my_function: ([11, 'beta'], 2), {'c': 3}_
+
 
 ## Add log level 
 Additional levels added to logging module:
@@ -89,3 +90,17 @@ Object A will be saved for 2 days. New call A(2) will take the state of object f
     a = A(2)
 Just singleton this. Your object with sspecific set of args will be be the only one through the whole code.
 
+## Retry errors
+    @retry(retries=5, delay=1)
+    def example_function():
+        import random
+        if random.random() < 0.8:
+            raise ValueError("Random error")
+        else:
+            return('True')
+    
+    
+    
+    example_function()
+
+Decorate function with failing possibility. Delay in seconds.

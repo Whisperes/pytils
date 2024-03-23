@@ -1,3 +1,6 @@
+"""Create pickle file for functions and objects after initiation.
+"""
+
 import glob
 import os
 import dill
@@ -7,19 +10,19 @@ from pytils.configurator import *
 from pytils.logger import logger
 
 # How long the object will be fresh? None - option for no usage of pickle. Can be change in config.
-period = config_var_with_default('PICKLE_PERIOD_DEFAULT', 1)
+period_pickle = config_var_with_default('PICKLE_PERIOD_DEFAULT', 1)
 
 
-def pickledays(period=period):
+def pickledays(period=period_pickle):
     def picklecache(func):
         # Path of storage the pickle files.
         path_pickle = config_var_with_default('PATH_PICKLE', './Assets/pickle/') + func.__name__
 
-        def makename(*args, **kwargs):
+        def makename(*args, **kwargs) -> str:
             """naming the pickle file"""
 
             # define the function for stringify the arguments
-            def convert_type(x):
+            def convert_type(x) -> str:
                 if isinstance(x, datetime.datetime):
                     return str(x.date())
                 else:
@@ -39,7 +42,7 @@ def pickledays(period=period):
                 name = 'NA'
             return path_pickle + '/' + name
 
-        def clearcache(*args, **kwargs):
+        def clearcache(*args, **kwargs) -> None:
             """ delete the cached result for these particular arguments """
             cachename = makename(args, kwargs)
             try:

@@ -203,17 +203,22 @@ class DiscordHandler(logging.Handler):
                                     verify=False,
                                     timeout=1)
         except requests.exceptions.ReadTimeout as ex:
-            logger.debug('Discord logs timed out')
-            raise ConnectionError('Discord timeout')
+            pass
+            # logger.debug('Discord logs timed out')
+            # raise ConnectionError('Discord timeout')
             # raise requests.exceptions.ReadTimeout
+        except:
+            pass
 
         if request.status_code == 404:
-            raise requests.exceptions.InvalidURL(
-                "This URL seams wrong... Response = %s" % request.text)
+            pass
+            # raise requests.exceptions.InvalidURL(
+            #     "This URL seams wrong... Response = %s" % request.text)
 
         if request.ok is False:
-            raise requests.exceptions.HTTPError(
-                "Request not successful... Code = %s, Message = %s" % request.status_code, request.text)
+            pass
+            # raise requests.exceptions.HTTPError(
+            #     "Request not successful... Code = %s, Message = %s" % request.status_code, request.text)
 
     def emit(self, record):
         try:

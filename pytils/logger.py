@@ -6,7 +6,7 @@ from socket import gethostname
 
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
+from pytils.handler_telegram import TelegramLoggingHandler
 from pytils.configurator import config_var_with_default
 
 # totally reject the SSL check. Important information have to be logged without this module.
@@ -64,7 +64,12 @@ def addLoggingLevel(levelName: str, levelNum: int, methodName=None):
 
 def create_logger(name = __name__,
                   discord_webhook = config_var_with_default("LOG_WEBHOOK_DISCORD",
-                                              'https://discordapp.com/api/webhooks/748465782551216160/66Yn1W-PlVW5_PItHGxHMQ7ZRtkD37poEtIb9JeMlv3ricIgMEuyz17Sp1LtevDc0drl')):
+                                              'https://discordapp.com/api/webhooks/748465782551216160/66Yn1W-PlVW5_PItHGxHMQ7ZRtkD37poEtIb9JeMlv3ricIgMEuyz17Sp1LtevDc0drl'),
+                  telegram_token = config_var_with_default("LOG_WEBHOOK_TELEGRAM", "8047232333:AAFEgTeAncBTlJh8wFNvg7dHWaQMZpS4GMM"),
+                  telegram_channel = config_var_with_default("LOG_CHANNEL_TELEGRAM", -1001493831691),
+                  telegram_thread = config_var_with_default("LOG_THREAD_TELEGRAM", None),
+
+                  ):
     # agent = f"{__name__}Bot"
     logger = logging.getLogger(name)
 
@@ -74,12 +79,15 @@ def create_logger(name = __name__,
     logfile_path = config_var_with_default("LOG_FOLDER", './Assets/logs/')
 
     # Define level of allers
-    discord_level = config_var_with_default("LOG_LEVEL_DISCORD", 'ERROR')
+    discord_level = config_var_with_default("LOG_LEVEL_DISCORD", 101)
     logfile_level = config_var_with_default("LOG_LEVEL_FILE", 'ERROR')
     stream_level = config_var_with_default("LOG_LEVEL_STREAM", 'DEBUG')
+    telegram_level = config_var_with_default("LOG_LEVEL_TELEGRAM", 'ERROR')
 
     # Create DiscordHandlerand StreamHandler
     discord_handler = DiscordHandler(discord_channel)
+
+    telegram_handler = TelegramLoggingHandler(bot_token=telegram_token, channel=telegram_channel, message_thread_id=telegram_thread)
 
     stream_handler = logging.StreamHandler()
 
@@ -94,6 +102,7 @@ def create_logger(name = __name__,
     discord_handler.setLevel(discord_level)
     logfile_handler.setLevel(logfile_level)
     stream_handler.setLevel(stream_level)
+    telegram_handler.setLevel(telegram_level)
 
     # Create formatter
     logs_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
@@ -108,6 +117,7 @@ def create_logger(name = __name__,
     logger.addHandler(discord_handler)
     logger.addHandler(logfile_handler)
     logger.addHandler(stream_handler)
+    logger.addHandler(telegram_handler)
 
 
     # add colors to stram logs

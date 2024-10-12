@@ -106,11 +106,13 @@ def create_logger(name = __name__,
 
     # Create formatter
     logs_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    telegram_format = logging.Formatter("%(levelname)s %(message)s")
 
     # Add format to handlers
     discord_handler.setFormatter(DiscordFormatter())
     # discord_handler.setFormatter(logs_format)
     logfile_handler.setFormatter(logs_format)
+    telegram_handler.setFormatter(telegram_format)
     # stream_handler.setFormatter(logs_stream_format)
 
     # Add the handlers to the Logger

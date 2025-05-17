@@ -11,7 +11,7 @@ from pytils.configurator import config_var_with_default
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-appname = os.environ.get("SERVICE_NAME", config_var_with_default("SERVICE_NAMESPACE","pyapp"))
+appname = config_var_with_default("SERVICE_NAME","pyapp")
 
 def add_logging_level(levelName: str, levelNum: int, methodName=None):
     """
@@ -69,8 +69,8 @@ def create_logger(name=__name__, logger=None,
                                                          "8047232333:AAFEgTeAncBTlJh8wFNvg7dHWaQMZpS4GMM"),
                   telegram_channel=config_var_with_default("LOG_CHANNEL_TELEGRAM", -1001493831691),
                   telegram_thread=config_var_with_default("LOG_THREAD_TELEGRAM", None),
-                  # otlp_endpoint: str = config_var_with_default("LOG_THREAD_OTLP", "http://192.168.77.2:4318/v1/logs"),
-                  otlp_endpoint: str = config_var_with_default("LOG_THREAD_OTLP", "http://localhost:4318/v1/logs"),
+                  otlp_endpoint: str = config_var_with_default("LOG_THREAD_OTLP", "http://192.168.77.2:4318/v1/logs"),
+                  # otlp_endpoint: str = config_var_with_default("LOG_HTTP_OTLP", "http://localhost:4318/v1/logs"),
                   ):
     if logger is None:
         logger = logging.getLogger(name)

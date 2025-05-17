@@ -60,7 +60,7 @@ def addLoggingLevel(levelName: str, levelNum: int, methodName=None):
     setattr(logging.getLoggerClass(), methodName, logForLevel)
     setattr(logging, methodName, logToRoot)
 
-def create_logger(name = __name__,
+def create_logger(name = __name__, logger = None,
                   discord_webhook = config_var_with_default("LOG_WEBHOOK_DISCORD",
                                               'https://discord.com/api/webhooks/1373280677541318786/LeOG3e5mLWekGo4Two30R9iQ_jWX5OKNWfNtlw8ALI_hl383wdPYPPzU0ZNp5kPzEWkV'),
                   telegram_token = config_var_with_default("LOG_WEBHOOK_TELEGRAM", "8047232333:AAFEgTeAncBTlJh8wFNvg7dHWaQMZpS4GMM"),
@@ -68,8 +68,10 @@ def create_logger(name = __name__,
                   telegram_thread = config_var_with_default("LOG_THREAD_TELEGRAM", None),
                   otlp_endpoint: str = config_var_with_default("LOG_THREAD_OTLP", "http://192.168.77.2:4318/v1/logs"),
                   ):
+    if logger is None:
+        logger = logging.getLogger(name)
+        logger.propagate = False
 
-    logger = logging.getLogger(name)
     logs_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
     # Create FileHandler
@@ -195,5 +197,6 @@ addLoggingLevel('NOTICE', 25, methodName=None)
 
 
 #create one logger for reserve goals. Just import module with "from pytils.logger import logger" and use in your programm
-create_logger("default")
+# create_logger("default")
+root_logger = create_logger(logger=logging.getLogger())
 logger = logging.getLogger("default")

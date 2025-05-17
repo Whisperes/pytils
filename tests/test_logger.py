@@ -58,3 +58,9 @@ def test_loggers_conflict():
 def test_highload():
     for e in range(50):
         logger.error(f'{e}')
+
+
+def test_root_logger():
+    lg = logging.getLogger()
+    lg.critical("ROOT message")
+    assert True

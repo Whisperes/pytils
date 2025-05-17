@@ -66,7 +66,7 @@ def create_logger(name = __name__,
                   telegram_token = config_var_with_default("LOG_WEBHOOK_TELEGRAM", "8047232333:AAFEgTeAncBTlJh8wFNvg7dHWaQMZpS4GMM"),
                   telegram_channel = config_var_with_default("LOG_CHANNEL_TELEGRAM", -1001493831691),
                   telegram_thread = config_var_with_default("LOG_THREAD_TELEGRAM", None),
-                  otlp_endpoint: str = config_var_with_default("LOG_THREAD_TELEGRAM", "http://192.168.77.2:4318/v1/logs"),
+                  otlp_endpoint: str = config_var_with_default("LOG_THREAD_OTLP", "http://192.168.77.2:4318/v1/logs"),
                   ):
 
     logger = logging.getLogger(name)

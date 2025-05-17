@@ -36,7 +36,6 @@ def test__la_exception():
         logger.error('test accepted', ex)
 
 def test_colors():
-
     logger.debug("this is a debugging message")
     logger.success("this is a success message")
     logger.info("this is an informational message")
@@ -54,3 +53,8 @@ def test_loggers_conflict():
     create_logger(__name__)
     logger2 = logging.getLogger(__name__)
     logger2.critical("this is a another critical message")
+
+
+def test_highload():
+    for e in range(50):
+        logger.error(f'{e}')

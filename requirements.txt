@@ -2,3 +2,6 @@ dynaconf
 requests
 dill
 coloredlogs
+opentelemetry-sdk
+protobuf==3.20
+opentelemetry-exporter-otlp

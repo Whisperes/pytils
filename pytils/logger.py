@@ -2,11 +2,9 @@ import json
 import logging
 from logging.handlers import TimedRotatingFileHandler
 from functools import wraps
-from socket import gethostname
 
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from pytils.handler_telegram import TelegramLoggingHandler
 from pytils.configurator import config_var_with_default
 
 # totally reject the SSL check. Important information have to be logged without this module.
@@ -64,181 +62,93 @@ def addLoggingLevel(levelName: str, levelNum: int, methodName=None):
 
 def create_logger(name = __name__,
                   discord_webhook = config_var_with_default("LOG_WEBHOOK_DISCORD",
-                                              'https://discordapp.com/api/webhooks/748465782551216160/66Yn1W-PlVW5_PItHGxHMQ7ZRtkD37poEtIb9JeMlv3ricIgMEuyz17Sp1LtevDc0drl'),
+                                              'https://discord.com/api/webhooks/1373280677541318786/LeOG3e5mLWekGo4Two30R9iQ_jWX5OKNWfNtlw8ALI_hl383wdPYPPzU0ZNp5kPzEWkV'),
                   telegram_token = config_var_with_default("LOG_WEBHOOK_TELEGRAM", "8047232333:AAFEgTeAncBTlJh8wFNvg7dHWaQMZpS4GMM"),
                   telegram_channel = config_var_with_default("LOG_CHANNEL_TELEGRAM", -1001493831691),
                   telegram_thread = config_var_with_default("LOG_THREAD_TELEGRAM", None),
-
+                  otlp_endpoint: str = config_var_with_default("LOG_THREAD_TELEGRAM", "http://192.168.77.2:4318/v1/logs"),
                   ):
-    # agent = f"{__name__}Bot"
+
     logger = logging.getLogger(name)
-
-    # define list of log handlers. Unified for further usage.
-    # unpublic discord server have to be changed in config files.
-    discord_channel = discord_webhook
-    logfile_path = config_var_with_default("LOG_FOLDER", './Assets/logs/')
-
-    # Define level of allers
-    discord_level = config_var_with_default("LOG_LEVEL_DISCORD", 101)
-    logfile_level = config_var_with_default("LOG_LEVEL_FILE", 'ERROR')
-    stream_level = config_var_with_default("LOG_LEVEL_STREAM", 'DEBUG')
-    telegram_level = config_var_with_default("LOG_LEVEL_TELEGRAM", 'ERROR')
-
-    # Create DiscordHandlerand StreamHandler
-    discord_handler = DiscordHandler(discord_channel)
-
-    telegram_handler = TelegramLoggingHandler(bot_token=telegram_token, channel=telegram_channel, message_thread_id=telegram_thread)
-
-    stream_handler = logging.StreamHandler()
+    logs_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
     # Create FileHandler
-    import os
-    if not os.path.exists(logfile_path):
-        os.makedirs(logfile_path)
+    logfile_level = config_var_with_default("LOG_LEVEL_FILE", 'ERROR')
+    if logfile_level is not None:
+        logfile_path = config_var_with_default("LOG_FOLDER", './Assets/logs/')
+        import os
+        if not os.path.exists(logfile_path):
+            os.makedirs(logfile_path)
+        logfile_handler = TimedRotatingFileHandler(logfile_path + 'log', when='D', backupCount=14)
+        logfile_handler.setLevel(logfile_level)
+        logfile_handler.setFormatter(logs_format)
 
-    logfile_handler = TimedRotatingFileHandler(logfile_path + 'log', when='D', backupCount=14)
+        logger.addHandler(logfile_handler)
 
-    # Set log level to handlers
-    discord_handler.setLevel(discord_level)
-    logfile_handler.setLevel(logfile_level)
-    stream_handler.setLevel(stream_level)
-    telegram_handler.setLevel(telegram_level)
+    # Create DiscordHandlerand StreamHandler
+    discord_channel = discord_webhook
+    discord_level = config_var_with_default("LOG_LEVEL_DISCORD", None)
+    if discord_level is not None:
+        from pytils.handler_discord import DiscordHandler, DiscordFormatter
 
-    # Create formatter
-    logs_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    telegram_format = logging.Formatter("%(levelname)s %(message)s")
+        discord_handler = DiscordHandler(discord_channel)
+        discord_handler.setLevel(discord_level)
+        discord_handler.setFormatter(DiscordFormatter())
 
-    # Add format to handlers
-    discord_handler.setFormatter(DiscordFormatter())
-    # discord_handler.setFormatter(logs_format)
-    logfile_handler.setFormatter(logs_format)
-    telegram_handler.setFormatter(telegram_format)
-    # stream_handler.setFormatter(logs_stream_format)
+        logger.addHandler(discord_handler)
 
-    # Add the handlers to the Logger
-    logger.addHandler(discord_handler)
-    logger.addHandler(logfile_handler)
-    logger.addHandler(stream_handler)
-    logger.addHandler(telegram_handler)
+    # Create TelegramHandler
+    telegram_level = config_var_with_default("LOG_LEVEL_TELEGRAM", None)
+    if telegram_level is not None:
+        from pytils.handler_telegram import TelegramLoggingHandler
+        telegram_handler = TelegramLoggingHandler(bot_token=telegram_token, channel=telegram_channel, message_thread_id=telegram_thread)
+        telegram_handler.setLevel(telegram_level)
+        telegram_format = logging.Formatter("%(levelname)s %(message)s")
+        telegram_handler.setFormatter(telegram_format)
 
+        logger.addHandler(telegram_handler)
 
-    # add colors to stram logs
-    import coloredlogs
-    coloredlogs.install(level='DEBUG',
-                        logger=logger,
-                        level_styles={'debug': {'color': 95},
-                                      'success': {'color': 46},
-                                      'info': {'color': 'blue'},
-                                      'notice': {'color': 'magenta'},
-                                      'warning': {'color': 'yellow'},
-                                      'error': {'color': 'red'},
-                                      'critical': {'bold': True, 'color': 'red'}})
+    #otlp
+    otlp_level = config_var_with_default("LOG_LEVEL_OTLP", 'ERROR')
+    if otlp_level is not None:
+        from opentelemetry.sdk.resources import Resource
+        from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+        from opentelemetry.sdk._logs.export import SimpleLogRecordProcessor, BatchLogRecordProcessor
+        # from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
+        from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+
+        resource = Resource(attributes={"service.name": name})
+        provider = LoggerProvider(resource=resource)
+        exporter = OTLPLogExporter(endpoint=otlp_endpoint)# insecure=insecure
+        processor = BatchLogRecordProcessor(exporter)
+        provider.add_log_record_processor(processor)
+        otlp_handler = LoggingHandler(level=otlp_level,
+                                      logger_provider=provider)
+
+        logger.addHandler(otlp_handler)
+
+    # Stdout
+    stream_level = config_var_with_default("LOG_LEVEL_STREAM", 'DEBUG')
+    if stream_level is not None:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(stream_level)
+
+        # add colors to stram logs
+        import coloredlogs
+        coloredlogs.install(level='DEBUG',
+                            logger=logger,
+                            level_styles={'debug': {'color': 95},
+                                          'success': {'color': 46},
+                                          'info': {'color': 'blue'},
+                                          'notice': {'color': 'magenta'},
+                                          'warning': {'color': 'yellow'},
+                                          'error': {'color': 'red'},
+                                          'critical': {'bold': True, 'color': 'red'}})
+
+        logger.addHandler(stream_handler)
 
     logger.debug(f'Logger {name} set up')
     return logger
-
-
-class DiscordFormatter(logging.Formatter):
-    colormap = {'CRITICAL': 0xa11f1f, 'ERROR': 0xd10909,
-                'WARNING': 0xb76b0d, 'NOTICE': 0x7c4605,
-                'SUCCESS': 0x28a904, 'INFO': 0x0867af,
-                'DEBUG': 0x676a6c
-                }
-
-    def formatMessage(self, record) -> dict:
-        """
-        Overwritten to return a dictionary of the relevant LogRecord attributes instead of a string.
-        KeyError is raised if an unknown attribute is provided in the fmt_dict.
-        Build the discord component https://autocode.com/tools/discord/embed-builder/
-        """
-        return {"embeds": [
-                            {
-                              "type": "rich",
-                              "description": record.msg,
-                              "color": self.colormap[record.levelname] if record.levelname in self.colormap else 0x181c20,
-                              "timestamp": self.formatTime(record),
-                              "footer": {
-                                "text": f"{record.levelname} in {record.module}"
-                              }
-                            }]}
-
-    def format(self, record) -> str:
-        """
-        Mostly the same as the parent's class method, the difference being that a dict is manipulated and dumped as JSON
-        instead of a string.
-        """
-        message_dict = self.formatMessage(record)
-
-        # TODO Format exception. Code below, but posts are too big
-        # if record.exc_info:
-        #     # Cache the traceback text to avoid converting it multiple times
-        #     # (it's constant anyway)
-        #     if not record.exc_text:
-        #         message_dict["embeds"][0].update({"title": record.message,
-        #                                           'description': self.formatException(record.exc_info)})
-        return json.dumps(message_dict, default=str)
-
-
-
-class DiscordHandler(logging.Handler):
-    """
-    A handler class which writes logging records, appropriately formatted, to a Discord Server using webhooks.
-    Thx https://github.com/TrayserCassa/DiscordHandler
-    """
-
-    def __init__(self, webhook_url: str, agent=None):
-        logging.Handler.__init__(self)
-
-        if webhook_url is None or webhook_url == "":
-            raise ValueError("webhook_url parameter must be given and can not be empty!")
-
-        if agent is None or agent == "":
-            agent = gethostname()
-
-        self._url = webhook_url
-        self._agent = agent
-        self._header = self.create_header()
-        self._name = ""
-
-    def create_header(self):
-        return {
-            'User-Agent': self._agent,
-            "Content-Type": "application/json"
-        }
-
-    def write_to_discord(self, message: str):
-        try:
-            #TODO use async thread for not waiting the answer from Discord
-            request = requests.post(self._url,
-                                    headers=self._header,
-                                    data=message,
-                                    verify=False,
-                                    timeout=1)
-        except requests.exceptions.ReadTimeout as ex:
-            pass
-            # logger.debug('Discord logs timed out')
-            # raise ConnectionError('Discord timeout')
-            # raise requests.exceptions.ReadTimeout
-        except:
-            pass
-
-        if request.status_code == 404:
-            pass
-            # raise requests.exceptions.InvalidURL(
-            #     "This URL seams wrong... Response = %s" % request.text)
-
-        if request.ok is False:
-            pass
-            # raise requests.exceptions.HTTPError(
-            #     "Request not successful... Code = %s, Message = %s" % request.status_code, request.text)
-
-    def emit(self, record):
-        try:
-            msg = self.format(record)
-            self.write_to_discord(msg)
-        except Exception:
-            self.handleError(record)
-
 
 def log(level=None, arg_included=True):
     """Decorator for functions, which will log the function request.
@@ -285,5 +195,5 @@ addLoggingLevel('NOTICE', 25, methodName=None)
 
 
 #create one logger for reserve goals. Just import module with "from pytils.logger import logger" and use in your programm
-create_logger("|")
-logger = logging.getLogger("|")
+create_logger("default")
+logger = logging.getLogger("default")

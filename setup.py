@@ -16,7 +16,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pytils-functions",
-    version="0.2.5",
+    version="0.2.10",
     author="Whispered",
     author_email="bluden99@example.com",
     description="Utils for data python project",

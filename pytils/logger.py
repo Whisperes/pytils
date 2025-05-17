@@ -3,6 +3,7 @@ from logging.handlers import TimedRotatingFileHandler
 from functools import wraps
 
 import requests
+import os
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from pytils.configurator import config_var_with_default
 
@@ -10,6 +11,7 @@ from pytils.configurator import config_var_with_default
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
+appname = os.environ.get("SERVICE_NAME", config_var_with_default("SERVICE_NAMESPACE","pyapp"))
 
 def add_logging_level(levelName: str, levelNum: int, methodName=None):
     """
@@ -67,7 +69,8 @@ def create_logger(name=__name__, logger=None,
                                                          "8047232333:AAFEgTeAncBTlJh8wFNvg7dHWaQMZpS4GMM"),
                   telegram_channel=config_var_with_default("LOG_CHANNEL_TELEGRAM", -1001493831691),
                   telegram_thread=config_var_with_default("LOG_THREAD_TELEGRAM", None),
-                  otlp_endpoint: str = config_var_with_default("LOG_THREAD_OTLP", "http://192.168.77.2:4318/v1/logs"),
+                  # otlp_endpoint: str = config_var_with_default("LOG_THREAD_OTLP", "http://192.168.77.2:4318/v1/logs"),
+                  otlp_endpoint: str = config_var_with_default("LOG_THREAD_OTLP", "http://localhost:4318/v1/logs"),
                   ):
     if logger is None:
         logger = logging.getLogger(name)
@@ -121,7 +124,19 @@ def create_logger(name=__name__, logger=None,
         # from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
         from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 
-        resource = Resource(attributes={"service.name": name})
+        resource_attrs = {"deployment.environment": os.environ.get("APP_ENV", "dev"),
+                           "service.name": appname,
+                           "service.namespace": os.environ.get("SERVICE_NAMESPACE",
+                                                               config_var_with_default("SERVICE_NAMESPACE","pyapp")),
+                        }
+        if "CONTAINER_NAME" in os.environ:
+            resource_attrs["container.name"] = os.environ.get("CONTAINER_NAME")
+        else:
+            import socket
+            resource_attrs["container.name"] = socket.gethostname()
+
+        resource = Resource(attributes=resource_attrs)
+
         provider = LoggerProvider(resource=resource)
         exporter = OTLPLogExporter(endpoint=otlp_endpoint)  # insecure=insecure
         processor = BatchLogRecordProcessor(exporter)
@@ -199,6 +214,7 @@ add_logging_level('SUCCESS', 15, methodName=None)
 add_logging_level('NOTICE', 25, methodName=None)
 
 # create one logger for reserve goals. Just import module with "from pytils.logger import logger" and use in your programm
-# create_logger("default")
-root_logger = create_logger(logger=logging.getLogger())
-logger = logging.getLogger("default")
+create_logger(appname)
+logger = logging.getLogger(appname)
+# root_logger = create_logger(logger=logging.getLogger())
+

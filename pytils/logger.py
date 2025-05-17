@@ -1,4 +1,3 @@
-import json
 import logging
 from logging.handlers import TimedRotatingFileHandler
 from functools import wraps
@@ -12,7 +11,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-def addLoggingLevel(levelName: str, levelNum: int, methodName=None):
+def add_logging_level(levelName: str, levelNum: int, methodName=None):
     """
     Comprehensively adds a new logging level to the `logging` module and the
     currently configured logging class.
@@ -60,12 +59,14 @@ def addLoggingLevel(levelName: str, levelNum: int, methodName=None):
     setattr(logging.getLoggerClass(), methodName, logForLevel)
     setattr(logging, methodName, logToRoot)
 
-def create_logger(name = __name__, logger = None,
-                  discord_webhook = config_var_with_default("LOG_WEBHOOK_DISCORD",
-                                              'https://discord.com/api/webhooks/1373280677541318786/LeOG3e5mLWekGo4Two30R9iQ_jWX5OKNWfNtlw8ALI_hl383wdPYPPzU0ZNp5kPzEWkV'),
-                  telegram_token = config_var_with_default("LOG_WEBHOOK_TELEGRAM", "8047232333:AAFEgTeAncBTlJh8wFNvg7dHWaQMZpS4GMM"),
-                  telegram_channel = config_var_with_default("LOG_CHANNEL_TELEGRAM", -1001493831691),
-                  telegram_thread = config_var_with_default("LOG_THREAD_TELEGRAM", None),
+
+def create_logger(name=__name__, logger=None,
+                  discord_webhook=config_var_with_default("LOG_WEBHOOK_DISCORD",
+                                                          'https://discord.com/api/webhooks/1373280677541318786/LeOG3e5mLWekGo4Two30R9iQ_jWX5OKNWfNtlw8ALI_hl383wdPYPPzU0ZNp5kPzEWkV'),
+                  telegram_token=config_var_with_default("LOG_WEBHOOK_TELEGRAM",
+                                                         "8047232333:AAFEgTeAncBTlJh8wFNvg7dHWaQMZpS4GMM"),
+                  telegram_channel=config_var_with_default("LOG_CHANNEL_TELEGRAM", -1001493831691),
+                  telegram_thread=config_var_with_default("LOG_THREAD_TELEGRAM", None),
                   otlp_endpoint: str = config_var_with_default("LOG_THREAD_OTLP", "http://192.168.77.2:4318/v1/logs"),
                   ):
     if logger is None:
@@ -103,25 +104,26 @@ def create_logger(name = __name__, logger = None,
     telegram_level = config_var_with_default("LOG_LEVEL_TELEGRAM", None)
     if telegram_level is not None:
         from pytils.handler_telegram import TelegramLoggingHandler
-        telegram_handler = TelegramLoggingHandler(bot_token=telegram_token, channel=telegram_channel, message_thread_id=telegram_thread)
+        telegram_handler = TelegramLoggingHandler(bot_token=telegram_token, channel=telegram_channel,
+                                                  message_thread_id=telegram_thread)
         telegram_handler.setLevel(telegram_level)
         telegram_format = logging.Formatter("%(levelname)s %(message)s")
         telegram_handler.setFormatter(telegram_format)
 
         logger.addHandler(telegram_handler)
 
-    #otlp
+    # otlp
     otlp_level = config_var_with_default("LOG_LEVEL_OTLP", 'ERROR')
     if otlp_level is not None:
         from opentelemetry.sdk.resources import Resource
         from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
-        from opentelemetry.sdk._logs.export import SimpleLogRecordProcessor, BatchLogRecordProcessor
+        from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
         # from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
         from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 
         resource = Resource(attributes={"service.name": name})
         provider = LoggerProvider(resource=resource)
-        exporter = OTLPLogExporter(endpoint=otlp_endpoint)# insecure=insecure
+        exporter = OTLPLogExporter(endpoint=otlp_endpoint)  # insecure=insecure
         processor = BatchLogRecordProcessor(exporter)
         provider.add_log_record_processor(processor)
         otlp_handler = LoggingHandler(level=otlp_level,
@@ -152,6 +154,7 @@ def create_logger(name = __name__, logger = None,
     logger.debug(f'Logger {name} set up')
     return logger
 
+
 def log(level=None, arg_included=True):
     """Decorator for functions, which will log the function request.
     Have to be used with @log(level='YOUR LEVEL') before any function.
@@ -178,7 +181,7 @@ def log(level=None, arg_included=True):
                 elif level == 'ERROR':
                     logger.error(msg)
                 elif isinstance(level, int):
-                    logger.log(msg, level=level)
+                    logger.log(msg=msg, level=level)
                 else:
                     raise AttributeError('Error for @log decorator arguments')
             except Exception as ex:
@@ -192,11 +195,10 @@ def log(level=None, arg_included=True):
 
 
 # add log levels into logging module
-addLoggingLevel('SUCCESS', 15, methodName=None)
-addLoggingLevel('NOTICE', 25, methodName=None)
+add_logging_level('SUCCESS', 15, methodName=None)
+add_logging_level('NOTICE', 25, methodName=None)
 
-
-#create one logger for reserve goals. Just import module with "from pytils.logger import logger" and use in your programm
+# create one logger for reserve goals. Just import module with "from pytils.logger import logger" and use in your programm
 # create_logger("default")
 root_logger = create_logger(logger=logging.getLogger())
 logger = logging.getLogger("default")

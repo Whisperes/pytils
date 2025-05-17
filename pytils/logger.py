@@ -69,7 +69,7 @@ def create_logger(name=__name__, logger=None,
                                                          "8047232333:AAFEgTeAncBTlJh8wFNvg7dHWaQMZpS4GMM"),
                   telegram_channel=config_var_with_default("LOG_CHANNEL_TELEGRAM", -1001493831691),
                   telegram_thread=config_var_with_default("LOG_THREAD_TELEGRAM", None),
-                  otlp_endpoint: str = config_var_with_default("LOG_THREAD_OTLP", "http://192.168.77.2:4318/v1/logs"),
+                  otlp_endpoint: str = config_var_with_default("LOG_HTTP_OTLP", "http://192.168.77.2:4318/v1/logs"),
                   # otlp_endpoint: str = config_var_with_default("LOG_HTTP_OTLP", "http://localhost:4318/v1/logs"),
                   ):
     if logger is None:
@@ -127,7 +127,7 @@ def create_logger(name=__name__, logger=None,
         resource_attrs = {"deployment.environment": os.environ.get("APP_ENV", "dev"),
                            "service.name": appname,
                            "service.namespace": os.environ.get("SERVICE_NAMESPACE",
-                                                               config_var_with_default("SERVICE_NAMESPACE","pyapp")),
+                                                               config_var_with_default("SERVICE_NAMESPACE","pyappspace")),
                         }
         if "CONTAINER_NAME" in os.environ:
             resource_attrs["container.name"] = os.environ.get("CONTAINER_NAME")
@@ -149,12 +149,13 @@ def create_logger(name=__name__, logger=None,
     # Stdout
     stream_level = config_var_with_default("LOG_LEVEL_STREAM", 'DEBUG')
     if stream_level is not None:
-        stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(stream_level)
-
+        # stream_handler = logging.StreamHandler()
+        # stream_handler.setLevel(stream_level)
+        # logger.addHandler(stream_handler)
         # add colors to stram logs
+
         import coloredlogs
-        coloredlogs.install(level='DEBUG',
+        coloredlogs.install(level=stream_level,
                             logger=logger,
                             level_styles={'debug': {'color': 95},
                                           'success': {'color': 46},
@@ -163,8 +164,6 @@ def create_logger(name=__name__, logger=None,
                                           'warning': {'color': 'yellow'},
                                           'error': {'color': 'red'},
                                           'critical': {'bold': True, 'color': 'red'}})
-
-        logger.addHandler(stream_handler)
 
     logger.debug(f'Logger {name} set up')
     return logger

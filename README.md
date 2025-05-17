@@ -22,7 +22,9 @@ Directly from github:
 ## Straight logs
 Log to the handlers: 
 * discord webhook, 
-* streamhandler 
+* telegram,
+* OpenTelemetry Collector,
+* streamhandler,
 * timerotation file. 
 
 For each handler you can set your own log level in the settings.toml file in your project (see Dynaconf package)

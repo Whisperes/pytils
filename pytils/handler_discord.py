@@ -1,6 +1,7 @@
 import logging
 from socket import gethostname
 import json
+import requests
 
 
 class DiscordFormatter(logging.Formatter):
